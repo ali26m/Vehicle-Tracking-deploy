@@ -14,6 +14,11 @@ app = Flask(__name__)
 # Enable CORS for all routes
 CORS(app)
 
+@app.get("/")
+def root():
+    return {"status": "OK", "message": "get location is running."}
+
+
 @app.route('/track-location', methods=['POST'])
 def track_location():
     print("hooy")
