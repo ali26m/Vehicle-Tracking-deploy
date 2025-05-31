@@ -3,85 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Get Location Every Second</title>
+    <title>Live Car Tracker</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   </head>
   <body>
-    <h1>Tracking Location</h1>
-    <button id="start-tracking-btn">Start Tracking</button>
-    <div id="location-display"></div>
-    <!-- Container for location divs -->
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <!-- <a href="predict.html">Predict Page</a> -->
+      <a href="main_map.html">Map Page</a>
+      <a href="powerbi.html">Power BI Page</a>
+    </div>
 
+    <!-- Toggle Button -->
+    <button class="sidebar-toggle" id="toggle-btn">☰</button>
+
+    <!-- Main Content -->
+    <div class="content">
+      <h2>Live Car Tracker Map</h2>
+      <!-- <div id="map" style="height: 50vh"></div> -->
+      <div id="map"></div>
+    </div>
+
+    <!-- Chatbot -->
+    <iframe
+      class="chatbot"
+      src="https://app.vectorshift.ai/chatbots/embedded/681c634aee90523eb920790f?openChatbot=true"
+      width="500px"
+      height="400px"
+      allow="clipboard-read; clipboard-write; microphone">
+    </iframe>
+
+    <!-- Scripts -->
     <script>
-      function generateRandomCarId() {
-        const characters =
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; // All possible characters
-        let carId = "";
-        for (let i = 0; i < 10; i++) {
-          // Length of car_id, you can adjust this as needed
-          const randomIndex = Math.floor(Math.random() * characters.length);
-          carId += characters[randomIndex];
-        }
-        return carId;
-      }
+      const toggleBtn = document.getElementById("toggle-btn");
+      const sidebar = document.getElementById("sidebar");
 
-      const car_id = generateRandomCarId(); // Example car_id, replace with actual value
+      toggleBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("closed");
+        toggleBtn.classList.toggle("closed");
+      });
 
-      // Function to get the current location and send it to the backend
-      function trackLocation() {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            function (position) {
-              const latitude = position.coords.latitude;
-              const longitude = position.coords.longitude;
+      const map = L.map("map").setView([30.095848, 31.3756539], 16);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
 
-              // Create a new div element for this location
-              const locationDiv = document.createElement("div");
-              locationDiv.classList.add("location");
-              locationDiv.innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+      const markers = {};
+      const socket = io("https://tracking-map-28cbafd745b5.hosted.ghaymah.systems:5000");
 
-              // Append the new location div below the previous one
-              document
-                .getElementById("location-display")
-                .appendChild(locationDiv);
-
-              // Send the data to your backend server (replace with your server URL)
-              fetch("https://get-location-5b6d3fa74446.hosted.ghaymah.systems/track-location", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  car_id: car_id,
-                  latitude: latitude,
-                  longitude: longitude,
-                }),
-              });
-            },
-            function (error) {
-              const locationDiv = document.createElement("div");
-              locationDiv.classList.add("location");
-              locationDiv.innerText =
-                "Error fetching location: " + error.message;
-              document
-                .getElementById("location-display")
-                .appendChild(locationDiv);
-            }
-          );
-        } else {
-          const locationDiv = document.createElement("div");
-          locationDiv.classList.add("location");
-          locationDiv.innerText =
-            "Geolocation is not supported by this browser.";
-          document.getElementById("location-display").appendChild(locationDiv);
-        }
-      }
-
-      // Start the tracking every second when the button is clicked
-      document
-        .getElementById("start-tracking-btn")
-        .addEventListener("click", function () {
-          setInterval(trackLocation, 1000); // Fetch location every 1 second
+      socket.on("location_update", (cars) => {
+        cars.forEach(({car_id, latitude, longitude}) => {
+          if (markers[car_id]) {
+            markers[car_id].setLatLng([latitude, longitude]);
+          } else {
+            const marker = L.marker([latitude, longitude]).addTo(map);
+            marker.bindPopup(`Car: ${car_id}`);
+            markers[car_id] = marker;
+          }
         });
+      });
     </script>
   </body>
 </html>
