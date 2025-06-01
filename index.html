@@ -52,7 +52,22 @@
       }).addTo(map);
 
       const markers = {};
-      const socket = io("https://tracking-map-28cbafd745b5.hosted.ghaymah.systems:5000");
+      const socket = io("https://tracking-map-80acc7a3a699.hosted.ghaymah.systems:5000", {
+        transports: ["websocket"],
+      });
+
+      socket.on("connect", () => {
+        console.log("Connected to server", socket);
+      });
+
+      // socket.on("location_update", (cars) => {
+      //   console.log("Received:", cars);
+      // });
+
+      socket.on("connect_error", (err) => {
+        console.error("Socket.IO connect error:", err);
+      });
+
 
       socket.on("location_update", (cars) => {
         cars.forEach(({car_id, latitude, longitude}) => {
