@@ -48,4 +48,4 @@ async def connect(sid, environ):
 async def disconnect(sid):
     print(f"Client disconnected: {sid}")
 
-uvicorn.run("get_car:socket_app", host="127.0.0.1", port=5000, reload=True)
+uvicorn.run("get_car:socket_app", host="127.0.0.1", port=5000)
